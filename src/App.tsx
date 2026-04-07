@@ -13,14 +13,14 @@ export default function App() {
     <UIProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/starmap" element={<StarMapPage />} />
-          <Route path="/" element={<AppLayout />}>
+          <Route path="/" element={<StarMapPage />} />
+          {/* <Route path="/" element={<AppLayout />}>
             <Route index element={<Navigate to="/location/area18" replace />} />
             <Route path="location/:id" element={<LocationPage />} />
             <Route path="factions" element={<FactionsPage />} />
             <Route path="facilities/:id" element={<FacilityPage />} />
             <Route path="design-system" element={<DesignSystemPage />} />
-          </Route>
+          </Route> */}
         </Routes>
       </BrowserRouter>
     </UIProvider>
