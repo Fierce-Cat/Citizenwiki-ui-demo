@@ -27,6 +27,8 @@ export const JumpPoint = ({
   const isSelected = selectedId === id;
   const meshRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const [labelZIndex, setLabelZIndex] = React.useState(1000);
+
 
   useFrame((state) => {
     if (meshRef.current) {
@@ -39,6 +41,15 @@ export const JumpPoint = ({
       const scale = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.1;
       ringRef.current.scale.set(scale, scale, scale);
     }
+
+    // Professional Depth Sorting
+    const dist = state.camera.position.distanceTo(new THREE.Vector3(...position));
+    const newZIndex = Math.floor(1000000 - dist / 1000);
+    if (labelZIndex !== newZIndex) {
+      setLabelZIndex(newZIndex);
+    }
+
+
   });
 
   return (
@@ -66,7 +77,7 @@ export const JumpPoint = ({
 
       {/* Label */}
       {(isSelected || selectedId === 'stanton') && (
-        <Html position={[0, size + 5, 0]} center zIndexRange={[0, 0]}>
+        <Html position={[0, size + 5, 0]} center style={{ zIndex: labelZIndex }}>
           <div
             className={`${isLightMode ? 'bg-white/60 border-blue-200 shadow-sm' : 'bg-black/80 border-white/40'} border rounded-full px-4 py-1.5 flex flex-col items-center justify-center backdrop-blur-md cursor-pointer pointer-events-auto`}
             onDoubleClick={(e) => { e.stopPropagation(); onFocus(id, new THREE.Vector3(...position)); }}

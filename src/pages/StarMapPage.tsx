@@ -83,8 +83,8 @@ export function StarMapPage() {
 
   return (
     <div className={`w-screen h-screen ${isLightMode ? 'bg-[#f0f0f0] text-black' : 'bg-black text-white'} overflow-hidden relative font-sans selection:bg-white/20`}>
-      {/* 3D Canvas */}
-      <div className="absolute inset-0">
+      {/* 3D Canvas Layer (Isolated Stacking Context) */}
+      <div className="absolute inset-0 z-0">
         <StarMapErrorBoundary>
           <Canvas
             camera={{ 
@@ -134,36 +134,41 @@ export function StarMapPage() {
         </StarMapErrorBoundary>
       </div>
 
-      <StarMapLoader colorMode={colorMode} forceShow={isTransitioning} />
+      <div className="absolute inset-0 z-50 pointer-events-none">
+        <StarMapLoader colorMode={colorMode} forceShow={isTransitioning} />
+      </div>
 
+      <div className="absolute inset-0 z-40 pointer-events-none">
+        <StarMapInterface
 
-      <StarMapInterface
-        isLightMode={isLightMode}
-        colorMode={colorMode}
-        cycleColorMode={cycleColorMode}
-        scaleMode={scaleMode}
-        toggleScaleMode={toggleScaleMode}
-        isExplorerOpen={isExplorerOpen}
-        setIsExplorerOpen={setIsExplorerOpen}
-        isMobileMenuOpen={isMobileMenuOpen}
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        showOrbits={showOrbits}
-        setShowOrbits={setShowOrbits}
-        showJumpPoints={showJumpPoints}
-        setShowJumpPoints={setShowJumpPoints}
-        showQuantumLinks={showQuantumLinks}
-        setShowQuantumLinks={setShowQuantumLinks}
-        useAdvancedShader={useAdvancedShader}
-        setUseAdvancedShader={setUseAdvancedShader}
-        selectedBody={selectedBody}
-        setSelectedId={setSelectedId}
-        handleFocus={handleFocus}
-        handleZoom={handleZoom}
-        onNavigateHome={() => navigate('/')}
-        handleLocationSelect={handleLocationSelect}
-        showTerminal={showTerminal}
-        setShowTerminal={setShowTerminal}
-      />
+          isLightMode={isLightMode}
+          colorMode={colorMode}
+          cycleColorMode={cycleColorMode}
+          scaleMode={scaleMode}
+          toggleScaleMode={toggleScaleMode}
+          isExplorerOpen={isExplorerOpen}
+          setIsExplorerOpen={setIsExplorerOpen}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          showOrbits={showOrbits}
+          setShowOrbits={setShowOrbits}
+          showJumpPoints={showJumpPoints}
+          setShowJumpPoints={setShowJumpPoints}
+          showQuantumLinks={showQuantumLinks}
+          setShowQuantumLinks={setShowQuantumLinks}
+          useAdvancedShader={useAdvancedShader}
+          setUseAdvancedShader={setUseAdvancedShader}
+          selectedBody={selectedBody}
+          setSelectedId={setSelectedId}
+          handleFocus={handleFocus}
+          handleZoom={handleZoom}
+          onNavigateHome={() => navigate('/')}
+          handleLocationSelect={handleLocationSelect}
+          showTerminal={showTerminal}
+          setShowTerminal={setShowTerminal}
+        />
+      </div>
+
 
     </div>
   );

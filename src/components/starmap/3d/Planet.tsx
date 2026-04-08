@@ -66,6 +66,8 @@ export const Planet = ({
   const planetGroupRef = useRef<THREE.Group>(null);
   const [labelsCollapsed, setLabelsCollapsed] = useState(false);
   const [lodLevel, setLodLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
+  const [labelZIndex, setLabelZIndex] = useState(1000);
+
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const lastDistRef = useRef(0);
   const stabilityTimerRef = useRef(0);
@@ -139,6 +141,13 @@ export const Planet = ({
       } else {
         if (labelsCollapsed) setLabelsCollapsed(false);
       }
+
+      // Professional Depth Sorting (Z-Index calculation)
+      const newZIndex = Math.floor(1000000 - dist / 1000);
+      if (labelZIndex !== newZIndex) {
+        setLabelZIndex(newZIndex);
+      }
+
     }
   });
 
@@ -196,7 +205,7 @@ export const Planet = ({
       )}
 
       {(isPlanetSelected || selectedId === 'stanton') && (
-        <Html position={[0, size * 1.2 + 5, 0]} center zIndexRange={[0, 0]}>
+        <Html position={[0, size * 1.2 + 5, 0]} center style={{ zIndex: labelZIndex }}>
           <div className="flex flex-col items-center gap-2 mt-10">
             <div
               className={`${isLightMode ? 'bg-white/60 border-blue-200 shadow-sm' : 'bg-black/80 border-white/40'} border rounded-full px-4 py-1.5 flex flex-col items-center justify-center backdrop-blur-md cursor-pointer pointer-events-auto transition-opacity duration-500 ${fadeOpacity > 0.8 ? 'opacity-40' : 'opacity-100'}`}
@@ -346,7 +355,9 @@ const MoonComponent = ({
   const [moonLodLevel, setMoonLodLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
   const [moonFadeOpacity, setMoonFadeOpacity] = useState(0);
   const [moonCameraSpeed, setMoonCameraSpeed] = useState(0);
+  const [moonLabelZIndex, setMoonLabelZIndex] = useState(1000);
   const lastDistRef = useRef(0);
+
   const stabilityTimerRef = useRef(0);
   const isPrewarmedRef = useRef(false);
 
@@ -408,9 +419,16 @@ const MoonComponent = ({
 
       if (moonFadeOpacity < targetFidelity) {
         setMoonFadeOpacity(v => Math.min(targetFidelity, v + delta * 1.5));
-      } else if (moonFadeOpacity > targetFidelity) {
+       } else if (moonFadeOpacity > targetFidelity) {
         setMoonFadeOpacity(v => Math.max(0, v - delta * 2.0));
       }
+
+      // Professional Depth Sorting (Z-Index calculation)
+      const newZIndex = Math.floor(1000000 - dist / 1000);
+      if (moonLabelZIndex !== newZIndex) {
+        setMoonLabelZIndex(newZIndex);
+      }
+
     }
   });
 
@@ -476,8 +494,7 @@ const MoonComponent = ({
       )}
 
       {(selectedId === planetId || isMoonSelected) && !isParentCollapsed && (
-        <Html position={[moonX, moon.size * 1.5 + 2, moonZ]} center zIndexRange={[0, 0]}>
-
+        <Html position={[moonX, moon.size * 1.5 + 2, moonZ]} center style={{ zIndex: moonLabelZIndex }}>
           <div
             className={`text-[8px] font-bold tracking-widest uppercase drop-shadow-md cursor-pointer ${isMoonSelected ? (isLightMode ? 'text-blue-900 bg-white/60 px-2 py-1 rounded-full border border-blue-200 shadow-sm' : 'text-white bg-black/80 px-2 py-1 rounded-full border border-white/40') : (isLightMode ? 'text-blue-900/60' : 'text-slate-400')}`}
             onDoubleClick={(e) => { e.stopPropagation(); onFocus(moon.id, moonPosVec); }}
