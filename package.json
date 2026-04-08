@@ -27,7 +27,7 @@
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.14.0",
     "three": "^0.183.2",
-    "use-dark-mode": "^2.3.1",
+    "usehooks-ts": "^3.1.1",
     "vite": "^6.2.0"
   },
   "devDependencies": {
