@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
-import { stanton3DData, jumpPointsData, getBodyPosition } from '../../../data/starMap3D';
+import { StarMapDatabase, getBodyPosition } from '../../../data/starMap3D';
+
 import { Planet } from './Planet';
 import { Orbit } from './Orbit';
 import { JumpPoint } from './JumpPoint';
@@ -15,7 +16,8 @@ export const StarSystem = ({
   onSelect,
   onFocus,
   isLightMode,
-  useAdvancedShader
+  useAdvancedShader,
+  scaleMode
 }: {
   showOrbits: boolean;
   showJumpPoints: boolean;
@@ -25,17 +27,21 @@ export const StarSystem = ({
   onFocus: (id: string, pos: THREE.Vector3) => void;
   isLightMode: boolean;
   useAdvancedShader: boolean;
+  scaleMode: 'display' | 'realistic';
 }) => {
-  const { star, planets } = stanton3DData;
+  const { star, planets, lagrangePoints, jumpPoints } = StarMapDatabase.stanton[scaleMode] as any;
+
+
 
   // Initial focus
   useEffect(() => {
     if (selectedId) {
-      const result = getBodyPosition(selectedId);
+      const result = getBodyPosition(selectedId, scaleMode);
       if (result) onFocus(result.resolvedId, result.pos);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   return (
     <group>
@@ -91,7 +97,7 @@ export const StarSystem = ({
       })}
 
       {/* Jump Points */}
-      {showJumpPoints && jumpPointsData.map(jp => {
+      {showJumpPoints && jumpPoints.map((jp: any) => {
         const x = Math.cos(jp.angle) * jp.distance;
         const z = Math.sin(jp.angle) * jp.distance;
         const y = jp.y || 0;
@@ -120,6 +126,32 @@ export const StarSystem = ({
           </group>
         );
       })}
+
+      {/* Lagrange Points */}
+      {lagrangePoints && lagrangePoints.map((lp: any) => {
+        const x = Math.cos(lp.angle) * lp.distance;
+        const z = Math.sin(lp.angle) * lp.distance;
+        const y = lp.y || 0;
+        return (
+          <group 
+            key={lp.id} 
+            position={[x, y, z]}
+            onClick={(e) => { e.stopPropagation(); onSelect(lp.id); }}
+            onDoubleClick={(e) => { e.stopPropagation(); onFocus(lp.id, new THREE.Vector3(x, y, z)); }}
+          >
+            {/* Minimalist marker for Lagrange point */}
+            <mesh>
+              <sphereGeometry args={[lp.size, 16, 16]} />
+              <meshBasicMaterial color={isLightMode ? "#0066cc" : "#00aaff"} transparent opacity={0.6} />
+            </mesh>
+            <mesh scale={2}>
+              <sphereGeometry args={[lp.size, 16, 16]} />
+              <meshBasicMaterial color={isLightMode ? "#0066cc" : "#00aaff"} wireframe transparent opacity={0.2} />
+            </mesh>
+          </group>
+        );
+      })}
+
     </group>
   );
 };

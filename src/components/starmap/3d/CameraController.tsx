@@ -7,16 +7,25 @@ import { getBodySize } from '../../../data/starMap3D';
 export const CameraController = ({
   target,
   focusId,
-  zoomCommand
+  zoomCommand,
+  scaleMode
 }: {
   target: THREE.Vector3,
   focusId: string | null,
-  zoomCommand: { type: 'in' | 'out' | 'reset', id: number } | null
+  zoomCommand: { type: 'in' | 'out' | 'reset', id: number } | null,
+  scaleMode: 'display' | 'realistic'
 }) => {
+  const isRealistic = scaleMode === 'realistic';
   const controlsRef = useRef<any>(null);
   const { camera } = useThree();
   const isAnimating = useRef(false);
-  const targetCameraPos = useRef(new THREE.Vector3(0, 150, 300));
+  
+  const defaultPos = isRealistic 
+    ? new THREE.Vector3(0, 50000000, 100000000) 
+    : new THREE.Vector3(0, 150, 300);
+    
+  const targetCameraPos = useRef(defaultPos.clone());
+
 
   useEffect(() => {
     if (!controlsRef.current) return;
@@ -24,10 +33,11 @@ export const CameraController = ({
     isAnimating.current = true;
 
     if (focusId === 'stanton' || !focusId) {
-      targetCameraPos.current.set(0, 150, 300);
+      targetCameraPos.current.copy(defaultPos);
     } else {
-      const size = getBodySize(focusId);
-      const desiredDistance = size * 6; // Adjust distance based on object size
+      const size = getBodySize(focusId, scaleMode);
+      const desiredDistance = size * (isRealistic ? 3.5 : 6); // Slightly tighter orbit for massive realistic bodies
+
 
       // Calculate current direction from target to camera
       const currentDir = new THREE.Vector3().subVectors(camera.position, controlsRef.current.target).normalize();
@@ -51,20 +61,21 @@ export const CameraController = ({
     if (zoomCommand.type === 'in') {
       const dir = new THREE.Vector3().subVectors(camera.position, currentTarget).normalize();
       const dist = camera.position.distanceTo(currentTarget);
-      const newDist = Math.max(dist * 0.6, 2);
+      const newDist = Math.max(dist * 0.6, isRealistic ? 10 : 2);
       targetCameraPos.current.copy(currentTarget).add(dir.multiplyScalar(newDist));
     } else if (zoomCommand.type === 'out') {
       const dir = new THREE.Vector3().subVectors(camera.position, currentTarget).normalize();
       const dist = camera.position.distanceTo(currentTarget);
-      const newDist = Math.min(dist * 1.6, 1000);
+      const newDist = Math.min(dist * 1.6, isRealistic ? 200000000 : 1000);
       targetCameraPos.current.copy(currentTarget).add(dir.multiplyScalar(newDist));
     } else if (zoomCommand.type === 'reset') {
-      const size = focusId === 'stanton' || !focusId ? 50 : getBodySize(focusId);
-      const desiredDistance = focusId === 'stanton' || !focusId ? 350 : size * 6;
+      const size = focusId === 'stanton' || !focusId ? (isRealistic ? 10000000 : 50) : getBodySize(focusId, scaleMode);
+      const desiredDistance = focusId === 'stanton' || !focusId ? (isRealistic ? 80000000 : 350) : size * (isRealistic ? 3.5 : 6);
       const currentDir = new THREE.Vector3().subVectors(camera.position, currentTarget).normalize();
       if (currentDir.lengthSq() < 0.01) currentDir.set(1, 0.5, 1).normalize();
       targetCameraPos.current.copy(currentTarget).add(currentDir.multiplyScalar(desiredDistance));
     }
+
   }, [zoomCommand, camera]);
 
   useEffect(() => {
@@ -95,10 +106,11 @@ export const CameraController = ({
       ref={controlsRef}
       enableDamping={true}
       dampingFactor={0.05}
-      minDistance={2}
-      maxDistance={1000}
+      minDistance={isRealistic ? 10 : 2}
+      maxDistance={isRealistic ? 200000000 : 1000}
       maxPolarAngle={Math.PI / 2 + 0.2}
       makeDefault
     />
+
   );
 };

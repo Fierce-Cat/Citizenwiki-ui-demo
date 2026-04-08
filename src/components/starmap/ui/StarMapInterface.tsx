@@ -12,6 +12,9 @@ export const StarMapInterface = ({
   isLightMode,
   colorMode,
   cycleColorMode,
+  scaleMode,
+  toggleScaleMode,
+
   isExplorerOpen,
   setIsExplorerOpen,
   isMobileMenuOpen,
@@ -36,6 +39,9 @@ export const StarMapInterface = ({
   isLightMode: boolean;
   colorMode: 'light' | 'dark' | 'realistic';
   cycleColorMode: () => void;
+  scaleMode: 'display' | 'realistic';
+  toggleScaleMode: () => void;
+
   isExplorerOpen: boolean;
   setIsExplorerOpen: (v: boolean) => void;
   isMobileMenuOpen: boolean;
@@ -82,6 +88,8 @@ export const StarMapInterface = ({
         <div className="flex justify-between items-end pointer-events-none">
           <MapControlsWidget
             isLightMode={isLightMode}
+            scaleMode={scaleMode}
+            toggleScaleMode={toggleScaleMode}
             showOrbits={showOrbits}
             setShowOrbits={setShowOrbits}
             showJumpPoints={showJumpPoints}
@@ -94,6 +102,7 @@ export const StarMapInterface = ({
             showTerminal={showTerminal}
             setShowTerminal={setShowTerminal}
           />
+
 
           <div className="flex flex-col items-end gap-4 pointer-events-none">
             <ZoomControlsWidget

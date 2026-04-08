@@ -1,17 +1,16 @@
 export const advancedAtmosphereVertexShader = `
-varying vec3 vWorldPosition;
+varying vec3 vLocalPosition;
 varying vec3 vNormal;
 
 void main() {
-    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPosition.xyz;
-    vNormal = normalize(mat3(modelMatrix) * normal);
-    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+    vLocalPosition = position;
+    vNormal = normalize(normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 `;
 
 export const advancedAtmosphereFragmentShader = `
-uniform vec3 planetPosition;
+uniform vec3 relativeCameraPosition;
 uniform float planetRadius;
 uniform float atmosphereRadius;
 uniform vec3 lightDirection;
@@ -19,7 +18,7 @@ uniform vec3 lightColor;
 uniform vec3 Kr; // Rayleigh absorption constant
 uniform float time;
 
-varying vec3 vWorldPosition;
+varying vec3 vLocalPosition;
 varying vec3 vNormal;
 
 #define PI 3.1415927
@@ -57,7 +56,8 @@ struct iMediaIntersection {
     vec3 nor;
 };
 
-iMediaIntersection mSphere(in vec3 ro, in vec3 rd, in vec4 sph, in float sphgnd) {
+// Simplified Sphere Intersection for local space (sph.xyz is 0,0,0)
+iMediaIntersection mSphere(in vec3 ro, in vec3 rd, in float atmR, in float gndR) {
     iMediaIntersection res;
     res.tnear = -1.0;
     res.tfar = -1.0;
@@ -65,10 +65,8 @@ iMediaIntersection mSphere(in vec3 ro, in vec3 rd, in vec4 sph, in float sphgnd)
     res.mfar = 0u;
     res.nor = vec3(0.0);
     
-    float r = sph.w;
-    vec3 oc = ro - sph.xyz;
-    float b = 2.0 * dot(oc, rd);
-    float c = dot(oc, oc) - r * r;
+    float b = 2.0 * dot(ro, rd);
+    float c = dot(ro, ro) - atmR * atmR;
     float h = b * b - 4.0 * c;
     
     if (h >= 0.0) {
@@ -79,14 +77,16 @@ iMediaIntersection mSphere(in vec3 ro, in vec3 rd, in vec4 sph, in float sphgnd)
         res.tfar = (-b + hsqrt) / 2.0;
         res.mfar = 1u;
         
-        r = sphgnd;
-        c = dot(oc, oc) - r * r;
+        c = dot(ro, ro) - gndR * gndR;
         h = b * b - 4.0 * c;
         
         if (h >= 0.0) {
-            res.tfar = (-b - sqrt(h)) / 2.0;
-            res.mfar = 2u;
-            res.nor = normalize(ro + rd * res.tfar - sph.xyz);
+            float t_ground = (-b - sqrt(h)) / 2.0;
+            if (t_ground > 0.0) {
+                res.tfar = t_ground;
+                res.mfar = 2u;
+                res.nor = normalize(ro + rd * res.tfar);
+            }
         }
     }
     return res;
@@ -104,29 +104,30 @@ float phase(float alpha, float g) {
 vec3 absorb(float dist, vec3 col, float f, vec3 Kr_val) {
     vec3 c = col;    
     c *= (vec3(1.0) - pow(Kr_val, vec3(f / max(dist, 0.0000000001))));
+    // Simplified Mie-like absorption
     c *= (vec3(1.0) - pow(vec3(0.05, 0.7, 0.9), vec3(f / max(dist * 0.5, 0.0000000001))));
-    c *= (vec3(1.0) - pow(vec3(0.01, 0.85, 0.9), vec3(f / max(dist * 0.1, 0.0000000001))));
     return c;
 }
 
 float airDensity(float alt) {
-    return max(0.0, 5.0 * exp(-7.0 * alt) * (1.0 - alt));
+    // alt is normalized (0 to 1) from ground to top of atmosphere
+    return max(0.0, 5.0 * exp(-6.0 * alt) * (1.0 - alt));
 }
 
 void main() {
-    vec3 ro = cameraPosition;
-    vec3 rd = normalize(vWorldPosition - cameraPosition);
+    vec3 ro = relativeCameraPosition;
+    // vLocalPosition is already at atmosphereRadius because of geometry args
+    vec3 rd = normalize(vLocalPosition - ro);
+
     
     vec3 light = normalize(lightDirection);
     vec3 lightcol = lightColor;
     
-    vec4 sph1 = vec4(planetPosition, atmosphereRadius);
-    float sph1gnd = planetRadius;
+    float gndR = planetRadius;
+    float atmR = atmosphereRadius;
     
-    iMediaIntersection hit = mSphere(ro, rd, sph1, sph1gnd);
+    iMediaIntersection hit = mSphere(ro, rd, atmR, gndR);
     
-    // If we are inside the atmosphere, tnear will be negative. We should start raymarching from 0.
-    // If tfar is negative, the whole intersection is behind us, so we discard.
     if (hit.tfar < 0.0) {
         discard;
     }
@@ -137,7 +138,7 @@ void main() {
         discard;
     }
     
-    float sph1atmscale = 1.0 / (sph1.w - sph1gnd); 
+    float atmScale = 1.0 / (atmR - gndR); 
     
     float miePhaseVal = 0.97;
     float ralPhaseVal = -0.01;
@@ -151,33 +152,48 @@ void main() {
         float rayleigh = phase(dot(rd, light), ralPhaseVal) * 1.4;
         
         float litDensity = 0.0;
-        float dt = (hit.tfar - hit.tnear) * 0.03;
+        int samples = 24;
+        float dt = (hit.tfar - hit.tnear) / float(samples);
         
         vec3 mieAccum = vec3(0.0);
         vec3 rayleighAccum = vec3(0.0);
         
-        for(float t = hit.tnear; t < hit.tfar - 0.00001; t += dt) {
+        for(int i = 0; i < samples; i++) {
+            float t = hit.tnear + dt * (float(i) + 0.5);
             vec3 apos = ro + rd * t;
-            float alt = (length(apos - sph1.xyz) - sph1gnd) * sph1atmscale;
+            float currentDist = length(apos);
+            float alt = (currentDist - gndR) * atmScale;
             
-            float lt = iSphere(apos, light, vec4(sph1.xyz, sph1gnd));
-            float sliceDensity = dt * airDensity(alt);
-            float litSlice = sliceDensity * (lt < 0.0 ? 1.0 : 0.0);
+            // Check if fragment is occluded from sun by the planet
+            float b = 2.0 * dot(apos, light);
+            float c = dot(apos, apos) - gndR * gndR;
+            float h = b * b - 4.0 * c;
+            bool isLit = h < 0.0 || b > 0.0; // IsLit if no intersection or intersection is behind the fragment
+            
+            float sliceDensity = (dt * atmScale) * airDensity(alt);
+            float litSlice = sliceDensity * (isLit ? 1.0 : 0.0);
             
             vec3 influx = vec3(0.0);
             
-            if (lt < 0.0) {
-                float tsun = iSphere2(apos, light, sph1);
-                float dtl = tsun * 0.1;
-                float densitytosun = 0.0;
+            if (isLit) {
+                // Secondary ray march to sun for atmospheric extinction
+                // Over-atmosphere intersection point distance
+                float b_atm = 2.0 * dot(apos, light);
+                float c_atm = dot(apos, apos) - atmR * atmR;
+                float tsun = (-b_atm + sqrt(b_atm * b_atm - 4.0 * c_atm)) / 2.0;
                 
-                for (float tl = 0.0; tl < tsun; tl += dtl) {
+                float densityToSun = 0.0;
+                int sunSamples = 4;
+                float dtl = tsun / float(sunSamples);
+                for (int j = 0; j < sunSamples; j++) {
+                    float tl = dtl * (float(j) + 0.5);
                     vec3 spos = apos + light * tl;
-                    densitytosun += dtl * airDensity((length(spos - sph1.xyz) - sph1gnd) * sph1atmscale);
+                    densityToSun += (dtl * atmScale) * airDensity((length(spos) - gndR) * atmScale);
                 }
                 
-                influx = absorb(densitytosun, lightcol, absorbCoeff, Kr);
+                influx = absorb(densityToSun, lightcol, absorbCoeff, Kr);
             }
+
             
             density += sliceDensity;
             litDensity += litSlice;
@@ -187,19 +203,14 @@ void main() {
         }
         
         vec3 acol = mieAccum + rayleighAccum;
-        
-        if (hit.mfar == 1u || hit.mfar == 2u) {
-            col = acol;
-        }
+        col = acol;
     }
     
-    // Tonemapping
-    float whitelevel = 2.0;
-    col = (col * (vec3(1.0) + (col / (whitelevel * whitelevel)))) / (vec3(1.0) + col);
-    
-    // Gamma
+    // Tonemapping & Color correction
+    col = (col * (vec3(1.0) + (col / 4.0))) / (vec3(1.0) + col);
     col = pow(max(col, 0.0), vec3(1.0 / 2.2));
     
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, clamp(dot(col, vec3(1.0)), 0.0, 1.0));
 }
 `;
+

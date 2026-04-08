@@ -26,8 +26,10 @@ const AtmosphereSimple = ({ size, id }: { size: number, id: string }) => {
         scatterColor: { value: new THREE.Vector3(...config.scatterColor) },
         atmosphereHeight: { value: atmosphereHeight },
         sunDirection: { value: new THREE.Vector3(0, 0, 0) }, // updated per frame
+        relativeCameraPosition: { value: new THREE.Vector3() },
         ambientLight: { value: config.ambientLight },
       },
+
       vertexShader: atmosphereVertexShader,
       fragmentShader: atmosphereFragmentShader,
       side: THREE.FrontSide,
@@ -39,14 +41,19 @@ const AtmosphereSimple = ({ size, id }: { size: number, id: string }) => {
 
   const meshRef = useRef<THREE.Mesh>(null);
 
-  useFrame(() => {
+  useFrame((state) => {
+
     if (meshRef.current) {
       const worldPos = new THREE.Vector3();
       meshRef.current.getWorldPosition(worldPos);
       const sunDir = worldPos.clone().negate().normalize();
       material.uniforms.sunDirection.value.copy(sunDir);
+      
+      const relCamPos = new THREE.Vector3().subVectors(state.camera.position, worldPos);
+      material.uniforms.relativeCameraPosition.value.copy(relCamPos);
     }
   });
+
 
   return (
     <mesh ref={meshRef} material={material}>
@@ -58,7 +65,7 @@ const AtmosphereSimple = ({ size, id }: { size: number, id: string }) => {
 const AtmosphereAdvanced = ({ size, color }: { size: number, color: string }) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  
+
   const uniforms = useMemo(() => {
     const baseColor = new THREE.Color(color);
     const Kr = new THREE.Color(
@@ -66,11 +73,11 @@ const AtmosphereAdvanced = ({ size, color }: { size: number, color: string }) =>
       Math.max(0.1, baseColor.g * 0.5),
       Math.max(0.1, baseColor.b * 0.5)
     );
-    
+
     return {
-      planetPosition: { value: new THREE.Vector3() },
+      relativeCameraPosition: { value: new THREE.Vector3() },
       planetRadius: { value: size },
-      atmosphereRadius: { value: size * 1.05 },
+      atmosphereRadius: { value: size * 1.05 }, // Match geometry scale
       lightDirection: { value: new THREE.Vector3(0, 0, 0) },
       lightColor: { value: new THREE.Color(0.8, 0.8, 0.8) },
       Kr: { value: Kr },
@@ -83,11 +90,14 @@ const AtmosphereAdvanced = ({ size, color }: { size: number, color: string }) =>
       materialRef.current.uniforms.time.value = state.clock.elapsedTime;
       const worldPosition = new THREE.Vector3();
       meshRef.current.getWorldPosition(worldPosition);
-      
+
       const lightDir = new THREE.Vector3(0, 0, 0).sub(worldPosition).normalize();
       materialRef.current.uniforms.lightDirection.value.copy(lightDir);
-      materialRef.current.uniforms.planetPosition.value.copy(worldPosition);
+
+      const relCamPos = new THREE.Vector3().subVectors(state.camera.position, worldPosition);
+      materialRef.current.uniforms.relativeCameraPosition.value.copy(relCamPos);
     }
+
   });
 
   return (

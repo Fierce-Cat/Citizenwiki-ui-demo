@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useProgress } from '@react-three/drei';
 import { addTerminalLog } from '../utils/TerminalLogger';
 
-export const StarMapLoader = ({ colorMode }: { colorMode: 'light' | 'dark' | 'realistic' }) => {
+export const StarMapLoader = ({ colorMode, forceShow = false }: { colorMode: 'light' | 'dark' | 'realistic', forceShow?: boolean }) => {
+
   const { progress, active, total, item } = useProgress();
   const [isVisible, setIsVisible] = useState(true);
   const [hasBooted, setHasBooted] = useState(false);
@@ -11,6 +12,12 @@ export const StarMapLoader = ({ colorMode }: { colorMode: 'light' | 'dark' | 're
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     
+    if (forceShow) {
+      setIsVisible(true);
+      addTerminalLog('Recalibrating NavNet parameters...', 'info');
+      return;
+    }
+
     if (!hasBooted) {
       if (!active && progress === 100) {
         // First boot complete
@@ -21,25 +28,20 @@ export const StarMapLoader = ({ colorMode }: { colorMode: 'light' | 'dark' | 're
         }, 500);
       }
     } else {
-      // Background loading after boot
-      if (active) {
-        // We only log when it starts a new batch, or just log generally
-        // But doing it for every item is too spammy, so we just log the name of the texture occasionally
-        if (item && item.includes('textures')) {
-          const fileName = item.split('/').pop()?.split('?')[0];
-          if (fileName) {
-             addTerminalLog(`Fetching surface data: ${fileName}...`, 'info');
-          }
-        }
-      } else if (!active && progress === 100) {
-        addTerminalLog('Background data sync complete', 'success');
+      // Transition out
+      if (!active && progress === 100) {
+        timeout = setTimeout(() => {
+          setIsVisible(false);
+          addTerminalLog('NavNet scale parameters adapted', 'success');
+        }, 800);
       }
     }
     
     return () => clearTimeout(timeout);
-  }, [active, progress, hasBooted, item]);
+  }, [active, progress, hasBooted, item, forceShow]);
 
-  if (!isVisible && hasBooted) return null;
+  if (!isVisible && hasBooted && !forceShow) return null;
+
 
   return (
     <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-1000 ${

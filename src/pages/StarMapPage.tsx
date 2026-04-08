@@ -6,7 +6,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useLocalStorage } from 'usehooks-ts';
 import { Environment } from '@react-three/drei';
 
-import { stanton3DData, jumpPointsData, getBodyPosition, getBodyData } from '../data/starMap3D';
+import { ScaleMode, StarMapDatabase, getBodyPosition, getBodyData } from '../data/starMap3D';
 import { StarMapErrorBoundary } from '../components/starmap/utils/StarMapErrorBoundary';
 import { Skybox } from '../components/starmap/3d/Skybox';
 import { Nebula } from '../components/starmap/3d/Nebula';
@@ -34,6 +34,21 @@ export function StarMapPage() {
   const [selectedId, setSelectedId] = useState<string | null>('crusader');
   const [focusedId, setFocusedId] = useState<string | null>('stanton');
   const [zoomCommand, setZoomCommand] = useState<{ type: 'in' | 'out' | 'reset', id: number } | null>(null);
+  const [scaleMode, setScaleMode] = useLocalStorage<ScaleMode>('starmap-scale-mode', 'display');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const toggleScaleMode = () => {
+    setIsTransitioning(true);
+    // Short delay to allow loader to appear before heavy 3D remount
+    setTimeout(() => {
+      setScaleMode(prev => prev === 'display' ? 'realistic' : 'display');
+      // Keep loader visible for a bit longer to hide the snap
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 1500);
+    }, 300);
+  };
+
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
@@ -52,16 +67,18 @@ export function StarMapPage() {
   };
 
   const handleLocationSelect = (id: string) => {
-    const result = getBodyPosition(id);
+    const result = getBodyPosition(id, scaleMode);
     if (result) {
       handleFocus(result.resolvedId, result.pos);
     }
   };
 
+
   const selectedBody = useMemo(() => {
     if (!selectedId) return null;
-    return getBodyData(selectedId);
-  }, [selectedId]);
+    return getBodyData(selectedId, scaleMode);
+  }, [selectedId, scaleMode]);
+
 
   return (
     <div className={`w-screen h-screen ${isLightMode ? 'bg-[#f0f0f0] text-black' : 'bg-black text-white'} overflow-hidden relative font-sans selection:bg-white/20`}>
@@ -69,31 +86,44 @@ export function StarMapPage() {
       <div className="absolute inset-0">
         <StarMapErrorBoundary>
           <Canvas
-            camera={{ position: [0, 150, 300], fov: 50, near: 0.1, far: 10000 }}
+            camera={{ 
+              position: scaleMode === 'realistic' ? [0, 50000000, 100000000] : [0, 150, 300], 
+              fov: 50, 
+              near: scaleMode === 'realistic' ? 10 : 0.1, 
+              far: scaleMode === 'realistic' ? 500000000 : 10000
+            }}
             gl={{
               toneMapping: THREE.ACESFilmicToneMapping,
               toneMappingExposure: 1.5
             }}>
+
             <color attach="background" args={[isLightMode ? '#f8f8f8' : '#050505']} />
             <Skybox isLightMode={isLightMode} />
             <Environment preset={isLightMode ? "city" : "night"} />
             <ambientLight intensity={isLightMode ? 1.5 : 0.5} />
             <DynamicLighting focusTarget={focusTarget} isZoomedIn={focusedId !== 'stanton'} />
-            <Grid isLightMode={isLightMode} />
+            <Grid isLightMode={isLightMode} scaleMode={scaleMode} />
+
             <Suspense fallback={null}>
               <Nebula isLightMode={isLightMode} />
-              <StarSystem
-                showOrbits={showOrbits}
-                showJumpPoints={showJumpPoints}
-                selectedId={selectedId}
-                focusedId={focusedId}
-                onSelect={handleSelect}
-                onFocus={handleFocus}
-                isLightMode={isLightMode}
-                useAdvancedShader={useAdvancedShader}
-              />
+              <group key={scaleMode}>
+                <StarSystem
+                  scaleMode={scaleMode}
+                  showOrbits={showOrbits}
+                  showJumpPoints={showJumpPoints}
+                  selectedId={selectedId}
+                  focusedId={focusedId}
+                  onSelect={handleSelect}
+                  onFocus={handleFocus}
+                  isLightMode={isLightMode}
+                  useAdvancedShader={useAdvancedShader}
+                />
+              </group>
             </Suspense>
-            <CameraController target={focusTarget} focusId={focusedId} zoomCommand={zoomCommand} />
+
+
+            <CameraController target={focusTarget} focusId={focusedId} zoomCommand={zoomCommand} scaleMode={scaleMode} />
+
             {colorMode === 'realistic' && (
               <EffectComposer>
                 <Bloom luminanceThreshold={1} mipmapBlur intensity={2} radius={0.8} />
@@ -103,12 +133,15 @@ export function StarMapPage() {
         </StarMapErrorBoundary>
       </div>
 
-      <StarMapLoader colorMode={colorMode} />
+      <StarMapLoader colorMode={colorMode} forceShow={isTransitioning} />
+
 
       <StarMapInterface
         isLightMode={isLightMode}
         colorMode={colorMode}
         cycleColorMode={cycleColorMode}
+        scaleMode={scaleMode}
+        toggleScaleMode={toggleScaleMode}
         isExplorerOpen={isExplorerOpen}
         setIsExplorerOpen={setIsExplorerOpen}
         isMobileMenuOpen={isMobileMenuOpen}
@@ -130,6 +163,7 @@ export function StarMapPage() {
         showTerminal={showTerminal}
         setShowTerminal={setShowTerminal}
       />
+
     </div>
   );
 }
