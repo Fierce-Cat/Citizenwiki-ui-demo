@@ -128,8 +128,8 @@ export const Planet = ({
           <BodyMaterial
             texture={baseTexture}
             color={color}
-            transparent={fadeOpacity > 0.05}
-            opacity={Math.max(0.1, 1 - fadeOpacity * 0.9)}
+            transparent={false}
+            opacity={1}
           />
         </mesh>
 
@@ -365,8 +365,8 @@ const MoonComponent = ({
             <BodyMaterial
               texture={baseTexture}
               color={moon.color}
-              transparent={moonFadeOpacity > 0.05}
-              opacity={Math.max(0.1, 1 - moonFadeOpacity * 0.9)}
+              transparent={false}
+              opacity={1}
             />
           </mesh>
 

@@ -1,9 +1,10 @@
 import React from 'react';
-import { ArrowLeft, Search, Sun, Moon, Menu, X } from 'lucide-react';
+import { ArrowLeft, Search, Sun, Moon, Sparkles, Menu, X } from 'lucide-react';
 
 export const TopNavigation = ({
   isLightMode,
-  toggleLightMode,
+  colorMode,
+  cycleColorMode,
   isExplorerOpen,
   setIsExplorerOpen,
   isMobileMenuOpen,
@@ -11,7 +12,8 @@ export const TopNavigation = ({
   onNavigateHome
 }: {
   isLightMode: boolean;
-  toggleLightMode: () => void;
+  colorMode: 'light' | 'dark' | 'realistic';
+  cycleColorMode: () => void;
   isExplorerOpen: boolean;
   setIsExplorerOpen: (v: boolean) => void;
   isMobileMenuOpen: boolean;
@@ -66,11 +68,11 @@ export const TopNavigation = ({
           </svg>
         </button>
         <button
-          onClick={toggleLightMode}
+          onClick={cycleColorMode}
           className={`w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full border ${isLightMode ? 'border-blue-200 bg-white/40 shadow-sm hover:bg-white/60' : 'border-white/10 bg-black/50 hover:bg-white/10'} backdrop-blur-md flex items-center justify-center transition-colors`}
           title="Toggle Theme"
         >
-          {isLightMode ? <Moon className="w-4 h-4 text-blue-900" /> : <Sun className="w-4 h-4 text-white" />}
+          {colorMode === 'light' ? <Sun className="w-4 h-4 text-blue-900" /> : colorMode === 'realistic' ? <Sparkles className="w-4 h-4 text-white" /> : <Moon className="w-4 h-4 text-white" />}
         </button>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

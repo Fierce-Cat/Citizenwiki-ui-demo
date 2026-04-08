@@ -9,7 +9,8 @@ import { CelestialBody3D } from '../../../data/starMap3D';
 
 export const StarMapInterface = ({
   isLightMode,
-  toggleLightMode,
+  colorMode,
+  cycleColorMode,
   isExplorerOpen,
   setIsExplorerOpen,
   isMobileMenuOpen,
@@ -30,7 +31,8 @@ export const StarMapInterface = ({
   setUseAdvancedShader
 }: {
   isLightMode: boolean;
-  toggleLightMode: () => void;
+  colorMode: 'light' | 'dark' | 'realistic';
+  cycleColorMode: () => void;
   isExplorerOpen: boolean;
   setIsExplorerOpen: (v: boolean) => void;
   isMobileMenuOpen: boolean;
@@ -55,7 +57,8 @@ export const StarMapInterface = ({
       <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6 z-10">
         <TopNavigation
           isLightMode={isLightMode}
-          toggleLightMode={toggleLightMode}
+          colorMode={colorMode}
+          cycleColorMode={cycleColorMode}
           isExplorerOpen={isExplorerOpen}
           setIsExplorerOpen={setIsExplorerOpen}
           isMobileMenuOpen={isMobileMenuOpen}

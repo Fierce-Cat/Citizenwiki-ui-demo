@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { useDarkMode } from 'usehooks-ts';
+import { useLocalStorage } from 'usehooks-ts';
 import { Environment } from '@react-three/drei';
 
 import { stanton3DData, jumpPointsData, getBodyPosition, getBodyData } from '../data/starMap3D';
@@ -23,9 +23,11 @@ export function StarMapPage() {
   const [showQuantumLinks, setShowQuantumLinks] = useState(true);
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [useAdvancedShader, setUseAdvancedShader] = useState(false);
-  const darkMode = useDarkMode({ defaultValue: false });
-  const isLightMode = !darkMode.isDarkMode;
+  const [colorMode, setColorMode] = useLocalStorage<'light' | 'dark' | 'realistic'>('starmap-color-mode', 'light');
+  const isLightMode = colorMode === 'light';
+  const useAdvancedShader = colorMode === 'realistic';
+  const setUseAdvancedShader = (v: boolean) => setColorMode(v ? 'realistic' : 'dark');
+  const cycleColorMode = () => setColorMode(c => c === 'light' ? 'dark' : c === 'dark' ? 'realistic' : 'light');
   const [focusTarget, setFocusTarget] = useState(new THREE.Vector3(0, 0, 0));
   const [selectedId, setSelectedId] = useState<string | null>('crusader');
   const [focusedId, setFocusedId] = useState<string | null>('stanton');
@@ -90,7 +92,7 @@ export function StarMapPage() {
               />
             </Suspense>
             <CameraController target={focusTarget} focusId={focusedId} zoomCommand={zoomCommand} />
-            {!isLightMode && (
+            {colorMode === 'realistic' && (
               <EffectComposer>
                 <Bloom luminanceThreshold={1} mipmapBlur intensity={2} radius={0.8} />
               </EffectComposer>
@@ -101,7 +103,8 @@ export function StarMapPage() {
 
       <StarMapInterface
         isLightMode={isLightMode}
-        toggleLightMode={darkMode.toggle}
+        colorMode={colorMode}
+        cycleColorMode={cycleColorMode}
         isExplorerOpen={isExplorerOpen}
         setIsExplorerOpen={setIsExplorerOpen}
         isMobileMenuOpen={isMobileMenuOpen}
