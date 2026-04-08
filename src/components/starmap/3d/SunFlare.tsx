@@ -34,7 +34,7 @@ export const SunFlare = ({ size, color }: { size: number, color: string }) => {
         <meshBasicMaterial color={[4, 4, 3]} toneMapped={false} />
       </mesh>
       {/* Corona Shader */}
-      <mesh material={coronaMaterial} scale={[1.8, 1.8, 1.8]}>
+      <mesh material={coronaMaterial} scale={[1.1, 1.1, 1.1]}>
         <sphereGeometry args={[size, 64, 64]} />
       </mesh>
     </group>
