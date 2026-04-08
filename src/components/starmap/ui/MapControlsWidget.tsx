@@ -10,7 +10,9 @@ export const MapControlsWidget = ({
   setShowQuantumLinks,
   isMobileMenuOpen,
   useAdvancedShader,
-  setUseAdvancedShader
+  setUseAdvancedShader,
+  showTerminal,
+  setShowTerminal
 }: {
   isLightMode: boolean;
   showOrbits: boolean;
@@ -22,6 +24,8 @@ export const MapControlsWidget = ({
   isMobileMenuOpen: boolean;
   useAdvancedShader: boolean;
   setUseAdvancedShader: (v: boolean) => void;
+  showTerminal: boolean;
+  setShowTerminal: (v: boolean) => void;
 }) => {
   return (
     <div className={`flex flex-col gap-2 pointer-events-auto ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
@@ -66,6 +70,15 @@ export const MapControlsWidget = ({
               className={`w-7 h-3.5 md:w-8 md:h-4 rounded-full relative transition-colors ${useAdvancedShader ? (isLightMode ? 'bg-yellow-400/40 border-yellow-500/50' : 'bg-blue-500/30 border-blue-500/50') : (isLightMode ? 'bg-blue-900/10 border-blue-900/20' : 'bg-white/5 border-white/10')} border`}
             >
               <div className={`absolute top-[1px] md:top-[1.5px] w-3 h-3 md:w-3 md:h-3 rounded-full transition-all ${useAdvancedShader ? 'left-[14px] md:left-[16px] bg-[currentColor] shadow-[0_0_8px_currentColor] ' + (isLightMode ? 'text-yellow-600' : 'text-blue-400') : 'left-[1.5px] bg-[currentColor] ' + (isLightMode ? 'text-blue-900/40' : 'text-white/40')}`} />
+            </button>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={`text-[10px] md:text-xs ${isLightMode ? 'text-blue-900' : 'text-white/80'}`}>Terminal Output</span>
+            <button
+              onClick={() => setShowTerminal(!showTerminal)}
+              className={`w-7 h-3.5 md:w-8 md:h-4 rounded-full relative transition-colors ${showTerminal ? (isLightMode ? 'bg-yellow-400/40 border-yellow-500/50' : 'bg-blue-500/30 border-blue-500/50') : (isLightMode ? 'bg-blue-900/10 border-blue-900/20' : 'bg-white/5 border-white/10')} border`}
+            >
+              <div className={`absolute top-[1px] md:top-[1.5px] w-3 h-3 md:w-3 md:h-3 rounded-full transition-all ${showTerminal ? 'left-[14px] md:left-[16px] bg-[currentColor] shadow-[0_0_8px_currentColor] ' + (isLightMode ? 'text-yellow-600' : 'text-blue-400') : 'left-[1.5px] bg-[currentColor] ' + (isLightMode ? 'text-blue-900/40' : 'text-white/40')}`} />
             </button>
           </div>
         </div>

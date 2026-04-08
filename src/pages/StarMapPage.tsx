@@ -15,6 +15,7 @@ import { StarSystem } from '../components/starmap/3d/StarSystem';
 import { CameraController } from '../components/starmap/3d/CameraController';
 import { DynamicLighting } from '../components/starmap/3d/DynamicLighting';
 import { StarMapInterface } from '../components/starmap/ui/StarMapInterface';
+import { StarMapLoader } from '../components/starmap/ui/StarMapLoader';
 
 export function StarMapPage() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export function StarMapPage() {
   const [showQuantumLinks, setShowQuantumLinks] = useState(true);
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
   const [colorMode, setColorMode] = useLocalStorage<'light' | 'dark' | 'realistic'>('starmap-color-mode', 'light');
   const isLightMode = colorMode === 'light';
   const useAdvancedShader = colorMode === 'realistic';
@@ -101,6 +103,8 @@ export function StarMapPage() {
         </StarMapErrorBoundary>
       </div>
 
+      <StarMapLoader colorMode={colorMode} />
+
       <StarMapInterface
         isLightMode={isLightMode}
         colorMode={colorMode}
@@ -123,6 +127,8 @@ export function StarMapPage() {
         handleZoom={handleZoom}
         onNavigateHome={() => navigate('/')}
         handleLocationSelect={handleLocationSelect}
+        showTerminal={showTerminal}
+        setShowTerminal={setShowTerminal}
       />
     </div>
   );

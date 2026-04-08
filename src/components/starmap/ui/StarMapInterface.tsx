@@ -4,6 +4,7 @@ import { TopNavigation } from './TopNavigation';
 import { MapControlsWidget } from './MapControlsWidget';
 import { ZoomControlsWidget } from './ZoomControlsWidget';
 import { SelectionCard } from './SelectionCard';
+import { TerminalWidget } from './TerminalWidget';
 import { StarMapLocationExplorer } from '../../ui/sidebar/StarMapLocationExplorer';
 import { CelestialBody3D } from '../../../data/starMap3D';
 
@@ -28,7 +29,9 @@ export const StarMapInterface = ({
   onNavigateHome,
   handleLocationSelect,
   useAdvancedShader,
-  setUseAdvancedShader
+  setUseAdvancedShader,
+  showTerminal,
+  setShowTerminal
 }: {
   isLightMode: boolean;
   colorMode: 'light' | 'dark' | 'realistic';
@@ -51,6 +54,8 @@ export const StarMapInterface = ({
   handleLocationSelect: (location: any) => void;
   useAdvancedShader: boolean;
   setUseAdvancedShader: (v: boolean) => void;
+  showTerminal: boolean;
+  setShowTerminal: (v: boolean) => void;
 }) => {
   return (
     <>
@@ -86,14 +91,19 @@ export const StarMapInterface = ({
             isMobileMenuOpen={isMobileMenuOpen}
             useAdvancedShader={useAdvancedShader}
             setUseAdvancedShader={setUseAdvancedShader}
+            showTerminal={showTerminal}
+            setShowTerminal={setShowTerminal}
           />
 
-          <ZoomControlsWidget
-            isLightMode={isLightMode}
-            isMobileMenuOpen={isMobileMenuOpen}
-            handleZoom={handleZoom}
-            handleFocus={handleFocus}
-          />
+          <div className="flex flex-col items-end gap-4 pointer-events-none">
+            <ZoomControlsWidget
+              isLightMode={isLightMode}
+              isMobileMenuOpen={isMobileMenuOpen}
+              handleZoom={handleZoom}
+              handleFocus={handleFocus}
+            />
+            <TerminalWidget colorMode={colorMode} isVisible={showTerminal} />
+          </div>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { BodyMaterial } from './BodyMaterial';
 import { Atmosphere } from './Atmosphere';
 import { CloudLayer } from './CloudLayer';
 import { CelestialBody3D } from '../../../data/starMap3D';
+import { addTerminalLog } from '../utils/TerminalLogger';
 
 interface PlanetProps {
   position: [number, number, number];
@@ -68,6 +69,10 @@ export const Planet = ({
   const isPlanetFocused = selectedId === id || focusedId === id;
 
   const baseTexture = useTexture(textureUrl || '') as THREE.Texture;
+
+  useEffect(() => {
+    addTerminalLog(`Asset LOD updated: [${name.toUpperCase()}] -> ${lodLevel}`, 'info');
+  }, [lodLevel, name]);
 
   const getGeometrySegments = (level: string) => {
     switch (level) {
@@ -290,6 +295,10 @@ const MoonComponent = ({
   const isMoonFocused = selectedId === moon.id || focusedId === moon.id;
 
   const baseTexture = useTexture(moon.textureUrl || '') as THREE.Texture;
+
+  useEffect(() => {
+    addTerminalLog(`Asset LOD updated: [${moon.name.toUpperCase()}] -> ${moonLodLevel}`, 'info');
+  }, [moonLodLevel, moon.name]);
 
   const moonX = Math.cos(moon.angle) * moon.distance;
   const moonZ = Math.sin(moon.angle) * moon.distance;
