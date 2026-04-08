@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -25,6 +25,17 @@ export const CameraController = ({
     : new THREE.Vector3(0, 150, 300);
     
   const targetCameraPos = useRef(defaultPos.clone());
+  
+  const currentBodyRadius = useMemo(() => {
+    if (focusId === 'stanton' || !focusId) return isRealistic ? 1000000 : 50;
+    return getBodySize(focusId, scaleMode);
+  }, [focusId, scaleMode, isRealistic]);
+
+  const minAllowedDistance = useMemo(() => {
+    // Buffer depends on scale: tighter for realistic, more generous for display
+    const buffer = isRealistic ? 1.02 : 1.2;
+    return currentBodyRadius * buffer;
+  }, [currentBodyRadius, isRealistic]);
 
 
   useEffect(() => {
@@ -98,21 +109,19 @@ export const CameraController = ({
         }
       }
 
-      // ADAPTIVE CLIPPING for 1:1 Scale
-      if (isRealistic) {
-        const dist = camera.position.distanceTo(controlsRef.current.target);
-        const size = focusId === 'stanton' || !focusId ? 200000 : getBodySize(focusId!, scaleMode);
-        
-        // If we are close to a body, pull the near plane in aggressively
-        // We want near to be much smaller than the distance to the surface
-        const newNear = Math.max(0.1, Math.min(10, dist * 0.0001));
-        const newFar = Math.max(500000000, dist * 10);
+      // ENHANCED ADAPTIVE CLIPPING
+      const distToTarget = camera.position.distanceTo(controlsRef.current.target);
+      const distToSurface = Math.max(0.1, distToTarget - currentBodyRadius);
+      
+      // Pull near plane in as we get close to surface
+      // We want near to be much smaller than the distance to the surface to avoid chopping
+      const newNear = Math.max(0.01, Math.min(distToSurface * 0.1, isRealistic ? 10 : 0.1));
+      const newFar = Math.max(isRealistic ? 500000000 : 10000, distToTarget * 10);
 
-        if (Math.abs(camera.near - newNear) > newNear * 0.05 || Math.abs(camera.far - newFar) > newFar * 0.05) {
-          camera.near = newNear;
-          camera.far = newFar;
-          camera.updateProjectionMatrix();
-        }
+      if (Math.abs(camera.near - newNear) > newNear * 0.05 || Math.abs(camera.far - newFar) > newFar * 0.05) {
+        camera.near = newNear;
+        camera.far = newFar;
+        camera.updateProjectionMatrix();
       }
 
       controlsRef.current.update();
@@ -125,8 +134,8 @@ export const CameraController = ({
       ref={controlsRef}
       enableDamping={true}
       dampingFactor={0.05}
-      minDistance={isRealistic ? 10 : 2}
-      maxDistance={isRealistic ? 200000000 : 1000}
+      minDistance={minAllowedDistance}
+      maxDistance={isRealistic ? 200000000 : 2000}
       maxPolarAngle={Math.PI / 2 + 0.2}
       makeDefault
     />

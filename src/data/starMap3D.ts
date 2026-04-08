@@ -1060,3 +1060,53 @@ export const getBodySize = (id: string, mode: ScaleMode = 'display') => {
   const data = getBodyData(id, mode);
   return data ? data.size : 5;
 };
+
+export const findBodyPath = (id: string | null, mode: ScaleMode = 'display'): { id: string, name: string }[] => {
+  const path: { id: string, name: string }[] = [{ id: 'stanton', name: 'Stanton' }];
+  if (!id || id === 'stanton') return path;
+
+  const db = StarMapDatabase.stanton[mode];
+  
+  // Check planets and moons
+  for (const planet of db.planets) {
+    if (planet.id === id) {
+      path.push({ id: planet.id, name: planet.name });
+      return path;
+    }
+    if (planet.moons) {
+      for (const moon of planet.moons) {
+        if (moon.id === id) {
+          path.push({ id: planet.id, name: planet.name });
+          path.push({ id: moon.id, name: moon.name });
+          return path;
+        }
+      }
+    }
+  }
+
+  // Check jump points
+  for (const jp of db.jumpPoints) {
+    if (jp.id === id) {
+      path.push({ id: jp.id, name: jp.name });
+      return path;
+    }
+  }
+
+  // Check lagrange points
+  for (const lp of db.lagrangePoints) {
+    if (lp.id === id) {
+      // Find parent planet for lagrange point
+      const parentId = (lp as any).parentBody;
+      if (parentId) {
+        const parent = db.planets.find(p => p.id === parentId);
+        if (parent) {
+          path.push({ id: parent.id, name: parent.name });
+        }
+      }
+      path.push({ id: lp.id, name: lp.name });
+      return path;
+    }
+  }
+
+  return path;
+};

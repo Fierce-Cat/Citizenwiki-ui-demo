@@ -90,7 +90,7 @@ export function StarMapPage() {
             camera={{ 
               position: scaleMode === 'realistic' ? [0, 50000000, 100000000] : [0, 150, 300], 
               fov: 50, 
-              near: scaleMode === 'realistic' ? 10 : 0.1, 
+              near: scaleMode === 'realistic' ? 0.1 : 0.1, 
               far: scaleMode === 'realistic' ? 500000000 : 10000
             }}
             gl={{

@@ -18,7 +18,7 @@ export const SelectionCard = ({
   isMobileMenuOpen: boolean;
 }) => {
   return (
-    <div className={`absolute left-4 md:left-6 top-24 md:top-32 flex-col gap-4 pointer-events-none transition-all duration-500 ${isMobileMenuOpen ? 'flex opacity-100' : 'hidden md:flex md:opacity-100'}`}>
+    <div className={`absolute mt-4 left-4 md:left-6 top-24 md:top-32 flex-col gap-4 pointer-events-none transition-all duration-500 ${isMobileMenuOpen ? 'flex opacity-100' : 'hidden md:flex md:opacity-100'}`}>
       {/* Selection Info Card */}
       <AnimatePresence mode="wait">
         {selectedBody && (

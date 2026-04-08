@@ -1,6 +1,7 @@
 import React from 'react';
 import * as THREE from 'three';
 import { TopNavigation } from './TopNavigation';
+import { AddressBar } from './AddressBar';
 import { MapControlsWidget } from './MapControlsWidget';
 import { ZoomControlsWidget } from './ZoomControlsWidget';
 import { SelectionCard } from './SelectionCard';
@@ -66,16 +67,18 @@ export const StarMapInterface = ({
   return (
     <>
       <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6 z-10">
-        <TopNavigation
-          isLightMode={isLightMode}
-          colorMode={colorMode}
-          cycleColorMode={cycleColorMode}
-          isExplorerOpen={isExplorerOpen}
-          setIsExplorerOpen={setIsExplorerOpen}
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          onNavigateHome={onNavigateHome}
-        />
+        <div className="flex flex-col gap-4 pointer-events-none">
+          <TopNavigation
+            isLightMode={isLightMode}
+            colorMode={colorMode}
+            cycleColorMode={cycleColorMode}
+            isExplorerOpen={isExplorerOpen}
+            setIsExplorerOpen={setIsExplorerOpen}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            onNavigateHome={onNavigateHome}
+          />
+        </div>
 
         <SelectionCard
           isLightMode={isLightMode}
@@ -86,22 +89,31 @@ export const StarMapInterface = ({
         />
 
         <div className="flex justify-between items-end pointer-events-none">
-          <MapControlsWidget
-            isLightMode={isLightMode}
-            scaleMode={scaleMode}
-            toggleScaleMode={toggleScaleMode}
-            showOrbits={showOrbits}
-            setShowOrbits={setShowOrbits}
-            showJumpPoints={showJumpPoints}
-            setShowJumpPoints={setShowJumpPoints}
-            showQuantumLinks={showQuantumLinks}
-            setShowQuantumLinks={setShowQuantumLinks}
-            isMobileMenuOpen={isMobileMenuOpen}
-            useAdvancedShader={useAdvancedShader}
-            setUseAdvancedShader={setUseAdvancedShader}
-            showTerminal={showTerminal}
-            setShowTerminal={setShowTerminal}
-          />
+          <div className="flex flex-col items-start gap-4 pointer-events-none">
+            <MapControlsWidget
+              isLightMode={isLightMode}
+              scaleMode={scaleMode}
+              toggleScaleMode={toggleScaleMode}
+              showOrbits={showOrbits}
+              setShowOrbits={setShowOrbits}
+              showJumpPoints={showJumpPoints}
+              setShowJumpPoints={setShowJumpPoints}
+              showQuantumLinks={showQuantumLinks}
+              setShowQuantumLinks={setShowQuantumLinks}
+              isMobileMenuOpen={isMobileMenuOpen}
+              useAdvancedShader={useAdvancedShader}
+              setUseAdvancedShader={setUseAdvancedShader}
+              showTerminal={showTerminal}
+              setShowTerminal={setShowTerminal}
+            />
+            <AddressBar
+              selectedId={selectedBody?.id || null}
+              isLightMode={isLightMode}
+              scaleMode={scaleMode}
+              onNavigate={(id) => handleLocationSelect(id)}
+            />
+          </div>
+
 
 
           <div className="flex flex-col items-end gap-4 pointer-events-none">
