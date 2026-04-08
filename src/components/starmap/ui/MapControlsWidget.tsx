@@ -24,7 +24,7 @@ export const MapControlsWidget = ({
   setUseAdvancedShader: (v: boolean) => void;
 }) => {
   return (
-    <div className={`flex flex-col gap-2 ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
+    <div className={`flex flex-col gap-2 pointer-events-auto ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
       <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-xl p-3 md:p-4 w-48 md:w-64`}>
         <div className="flex justify-between items-start mb-3 md:mb-4">
           <div className={`text-[10px] font-bold tracking-widest uppercase ${isLightMode ? 'text-blue-900/70' : 'text-white/60'}`}>Map Controls</div>

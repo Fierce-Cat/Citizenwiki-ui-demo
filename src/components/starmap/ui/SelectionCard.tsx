@@ -18,7 +18,7 @@ export const SelectionCard = ({
   isMobileMenuOpen: boolean;
 }) => {
   return (
-    <div className={`absolute left-4 md:left-6 top-24 md:top-32 flex-col gap-4 pointer-events-auto transition-all duration-500 ${isMobileMenuOpen ? 'flex opacity-100' : 'hidden md:flex md:opacity-100'}`}>
+    <div className={`absolute left-4 md:left-6 top-24 md:top-32 flex-col gap-4 pointer-events-none transition-all duration-500 ${isMobileMenuOpen ? 'flex opacity-100' : 'hidden md:flex md:opacity-100'}`}>
       {/* Selection Info Card */}
       <AnimatePresence mode="wait">
         {selectedBody && (
@@ -27,7 +27,7 @@ export const SelectionCard = ({
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -20, opacity: 0 }}
-            className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-lg' : 'bg-black/80 border-white/20 shadow-2xl'} backdrop-blur-xl border rounded-2xl p-4 md:p-5 w-56 md:w-72 relative group overflow-hidden`}
+            className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-lg' : 'bg-black/80 border-white/20 shadow-2xl'} backdrop-blur-xl border rounded-2xl p-4 md:p-5 w-56 md:w-72 relative group overflow-hidden pointer-events-auto`}
           >
             {/* Decorative background element */}
             <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl transition-colors duration-700 ${isLightMode ? 'bg-yellow-400/20 group-hover:bg-yellow-400/30' : 'bg-blue-500/10 group-hover:bg-blue-500/20'}`} />
@@ -85,7 +85,7 @@ export const SelectionCard = ({
       {/* Landing Zone Example Card (Shows when Crusader is selected) */}
       {selectedBody?.id === 'crusader' && (
         <>
-          <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-xl p-3 md:p-4 w-48 md:w-64`}>
+          <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-xl p-3 md:p-4 w-48 md:w-64 pointer-events-auto`}>
             <div className={`text-[8px] font-bold tracking-widest uppercase mb-1 md:mb-2 ${isLightMode ? 'text-blue-900/50' : 'text-white/40'}`}>Active Landing Zone</div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
@@ -93,7 +93,7 @@ export const SelectionCard = ({
             </div>
           </div>
 
-          <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-xl p-3 md:p-4 w-48 md:w-64`}>
+          <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-xl p-3 md:p-4 w-48 md:w-64 pointer-events-auto`}>
             <div className={`text-[8px] font-bold tracking-widest uppercase mb-1 md:mb-2 ${isLightMode ? 'text-blue-900/50' : 'text-white/40'}`}>Security Alert</div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]" />

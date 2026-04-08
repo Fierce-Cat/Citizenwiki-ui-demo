@@ -15,7 +15,7 @@ export const ZoomControlsWidget = ({
   handleFocus: (id: string, pos: THREE.Vector3) => void;
 }) => {
   return (
-    <div className={`flex flex-col gap-2 ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
+    <div className={`flex flex-col gap-2 pointer-events-auto ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
       <div className={`${isLightMode ? 'bg-white/40 border-blue-200 shadow-sm' : 'bg-black/60 border-white/10'} backdrop-blur-md border rounded-full flex flex-col overflow-hidden`}>
         <button
           onClick={() => handleZoom('in')}

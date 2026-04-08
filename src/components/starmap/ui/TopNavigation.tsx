@@ -19,9 +19,9 @@ export const TopNavigation = ({
   onNavigateHome: () => void;
 }) => {
   return (
-    <div className="flex justify-between items-start pointer-events-auto">
+    <div className="flex justify-between items-start pointer-events-none">
       {/* Top Left */}
-      <div className="flex items-start gap-3 md:gap-4">
+      <div className="flex items-start gap-3 md:gap-4 pointer-events-auto">
         <button
           onClick={onNavigateHome}
           className={`w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full border ${isLightMode ? 'border-blue-200 bg-white/40 shadow-sm hover:bg-white/60' : 'border-white/10 bg-black/50 hover:bg-white/10'} backdrop-blur-md flex items-center justify-center transition-colors`}
@@ -45,7 +45,7 @@ export const TopNavigation = ({
       </div>
 
       {/* Top Right */}
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
         <div className="relative group hidden sm:block">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isLightMode ? 'text-blue-900/40 group-hover:text-blue-900/80' : 'text-white/40 group-hover:text-white/80'} transition-colors`} />
           <input

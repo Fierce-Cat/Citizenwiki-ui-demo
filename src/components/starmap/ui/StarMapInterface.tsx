@@ -71,7 +71,7 @@ export const StarMapInterface = ({
           isMobileMenuOpen={isMobileMenuOpen}
         />
 
-        <div className="flex justify-between items-end pointer-events-auto">
+        <div className="flex justify-between items-end pointer-events-none">
           <MapControlsWidget
             isLightMode={isLightMode}
             showOrbits={showOrbits}
