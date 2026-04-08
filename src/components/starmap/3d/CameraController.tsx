@@ -87,7 +87,7 @@ export const CameraController = ({
     }
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (controlsRef.current) {
       if (isAnimating.current) {
         controlsRef.current.target.lerp(target, 0.05);
@@ -97,9 +97,28 @@ export const CameraController = ({
           isAnimating.current = false;
         }
       }
+
+      // ADAPTIVE CLIPPING for 1:1 Scale
+      if (isRealistic) {
+        const dist = camera.position.distanceTo(controlsRef.current.target);
+        const size = focusId === 'stanton' || !focusId ? 200000 : getBodySize(focusId!, scaleMode);
+        
+        // If we are close to a body, pull the near plane in aggressively
+        // We want near to be much smaller than the distance to the surface
+        const newNear = Math.max(0.1, Math.min(10, dist * 0.0001));
+        const newFar = Math.max(500000000, dist * 10);
+
+        if (Math.abs(camera.near - newNear) > newNear * 0.05 || Math.abs(camera.far - newFar) > newFar * 0.05) {
+          camera.near = newNear;
+          camera.far = newFar;
+          camera.updateProjectionMatrix();
+        }
+      }
+
       controlsRef.current.update();
     }
   });
+
 
   return (
     <OrbitControls

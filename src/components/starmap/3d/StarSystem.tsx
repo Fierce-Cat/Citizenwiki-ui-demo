@@ -7,6 +7,7 @@ import { Planet } from './Planet';
 import { Orbit } from './Orbit';
 import { JumpPoint } from './JumpPoint';
 import { SunFlare } from './SunFlare';
+import { LagrangePoint } from './LagrangePoint';
 
 export const StarSystem = ({
   showOrbits,
@@ -91,6 +92,8 @@ export const StarSystem = ({
               moons={planet.moons}
               isLightMode={isLightMode}
               useAdvancedShader={useAdvancedShader}
+              scaleMode={scaleMode}
+
             />
           </group>
         );
@@ -127,30 +130,25 @@ export const StarSystem = ({
         );
       })}
 
-      {/* Lagrange Points */}
       {lagrangePoints && lagrangePoints.map((lp: any) => {
         const x = Math.cos(lp.angle) * lp.distance;
         const z = Math.sin(lp.angle) * lp.distance;
         const y = lp.y || 0;
         return (
-          <group 
-            key={lp.id} 
+          <LagrangePoint
+            key={lp.id}
             position={[x, y, z]}
-            onClick={(e) => { e.stopPropagation(); onSelect(lp.id); }}
-            onDoubleClick={(e) => { e.stopPropagation(); onFocus(lp.id, new THREE.Vector3(x, y, z)); }}
-          >
-            {/* Minimalist marker for Lagrange point */}
-            <mesh>
-              <sphereGeometry args={[lp.size, 16, 16]} />
-              <meshBasicMaterial color={isLightMode ? "#0066cc" : "#00aaff"} transparent opacity={0.6} />
-            </mesh>
-            <mesh scale={2}>
-              <sphereGeometry args={[lp.size, 16, 16]} />
-              <meshBasicMaterial color={isLightMode ? "#0066cc" : "#00aaff"} wireframe transparent opacity={0.2} />
-            </mesh>
-          </group>
+            size={lp.size}
+            id={lp.id}
+            name={lp.name}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            onFocus={onFocus}
+            isLightMode={isLightMode}
+          />
         );
       })}
+
 
     </group>
   );

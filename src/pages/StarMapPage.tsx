@@ -42,11 +42,12 @@ export function StarMapPage() {
     // Short delay to allow loader to appear before heavy 3D remount
     setTimeout(() => {
       setScaleMode(prev => prev === 'display' ? 'realistic' : 'display');
-      // Keep loader visible for a bit longer to hide the snap
+      // Keep loader visible for exactly 2 total seconds to hide the snap
       setTimeout(() => {
         setIsTransitioning(false);
-      }, 1500);
-    }, 300);
+      }, 1600);
+    }, 400);
+
   };
 
 

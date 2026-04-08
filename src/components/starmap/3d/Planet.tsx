@@ -25,7 +25,9 @@ interface PlanetProps {
   moons?: CelestialBody3D[];
   isLightMode: boolean;
   useAdvancedShader: boolean;
+  scaleMode: 'display' | 'realistic';
 }
+
 
 interface HDLayerProps {
   hdTextureUrl: string | null | undefined;
@@ -49,14 +51,20 @@ interface MoonComponentProps {
   useAdvancedShader: boolean;
   parentPosVec: THREE.Vector3;
   planetId: string;
+  scaleMode: 'display' | 'realistic';
+  isParentCollapsed: boolean;
   key?: React.Key;
 }
 
+
+
 export const Planet = ({
-  position, color, size, name, id, selectedId, focusedId, onSelect, onFocus, textureUrl, hdTextureUrl, reflectionUrl, cloudsUrl, moons = [], isLightMode, useAdvancedShader
+  position, color, size, name, id, selectedId, focusedId, onSelect, onFocus, textureUrl, hdTextureUrl, reflectionUrl, cloudsUrl, moons = [], isLightMode, useAdvancedShader, scaleMode
 }: PlanetProps) => {
+  const isRealistic = scaleMode === 'realistic';
   const { gl } = useThree();
   const planetGroupRef = useRef<THREE.Group>(null);
+  const [labelsCollapsed, setLabelsCollapsed] = useState(false);
   const [lodLevel, setLodLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const lastDistRef = useRef(0);
@@ -69,6 +77,7 @@ export const Planet = ({
   const isPlanetFocused = selectedId === id || focusedId === id;
 
   const baseTexture = useTexture(textureUrl || '') as THREE.Texture;
+  const hdTexture = useHighResTexture(isRealistic ? hdTextureUrl : null);
 
   useEffect(() => {
     addTerminalLog(`Asset LOD updated: [${name.toUpperCase()}] -> ${lodLevel}`, 'info');
@@ -93,11 +102,14 @@ export const Planet = ({
       lastDistRef.current = dist;
       setCameraSpeed(speed);
 
-      // HYBRID LOD CALCULATIONS
-      const distWeight = THREE.MathUtils.clamp((100 - dist) / (100 - 45), 0, 1);
+      // HYBRID LOD CALCULATIONS (Relative to Body Size)
+      const proximityThreshold = size * 5.0; // Distance to start picking up high fidelity
+      const highFidelityThreshold = size * 2.5; // Distance to start HD upload
+
+      const distWeight = THREE.MathUtils.clamp((proximityThreshold - dist) / (proximityThreshold - highFidelityThreshold), 0, 1);
       const proximityFidelity = distWeight * 0.4;
 
-      if (isPlanetFocused && dist < 55) {
+      if (isPlanetFocused && dist < highFidelityThreshold) {
         if (speed < 0.6) {
           stabilityTimerRef.current = Math.min(1.0, stabilityTimerRef.current + delta);
         } else {
@@ -110,13 +122,22 @@ export const Planet = ({
       const targetFidelity = isPlanetFocused ? (proximityFidelity + stabilityFidelity) : 0;
 
       if (targetFidelity > 0.9) setLodLevel('HIGH');
-      else if (dist < 150) setLodLevel('MEDIUM');
+      else if (dist < size * 15.0) setLodLevel('MEDIUM');
       else setLodLevel('LOW');
+
 
       if (fadeOpacity < targetFidelity) {
         setFadeOpacity(v => Math.min(targetFidelity, v + delta * 1.5));
       } else if (fadeOpacity > targetFidelity) {
         setFadeOpacity(v => Math.max(0, v - delta * (isPlanetFocused ? 1.0 : 3.0)));
+      }
+
+      // Dropdown collapse threshold: 80x the planet size
+      const collapseThreshold = size * 100;
+      if (isRealistic && dist > collapseThreshold) {
+        if (!labelsCollapsed) setLabelsCollapsed(true);
+      } else {
+        if (labelsCollapsed) setLabelsCollapsed(false);
       }
     }
   });
@@ -129,16 +150,16 @@ export const Planet = ({
           onDoubleClick={(e) => { e.stopPropagation(); onFocus(id, posVec); }}
           renderOrder={0}
         >
-          <sphereGeometry args={[size, getGeometrySegments(lodLevel), getGeometrySegments(lodLevel)]} />
+          <sphereGeometry args={[size, isRealistic ? 128 : getGeometrySegments(lodLevel), isRealistic ? 128 : getGeometrySegments(lodLevel)]} />
           <BodyMaterial
-            texture={baseTexture}
+            texture={(isRealistic && hdTexture) ? hdTexture : baseTexture}
             color={color}
             transparent={false}
             opacity={1}
           />
         </mesh>
 
-        {(lodLevel === 'HIGH' || fadeOpacity > 0.05) && (
+        {!isRealistic && (lodLevel === 'HIGH' || fadeOpacity > 0.05) && (
           <Suspense fallback={null}>
             <HDLayer
               hdTextureUrl={(isPlanetFocused || fadeOpacity > 0.1) ? hdTextureUrl : null}
@@ -175,23 +196,58 @@ export const Planet = ({
       )}
 
       {(isPlanetSelected || selectedId === 'stanton') && (
-        <Html position={[0, size + 5, 0]} center zIndexRange={[0, 0]}>
-          <div
-            className={`${isLightMode ? 'bg-white/60 border-blue-200 shadow-sm' : 'bg-black/80 border-white/40'} border rounded-full px-4 py-1.5 flex flex-col items-center justify-center backdrop-blur-md cursor-pointer pointer-events-auto transition-opacity duration-500 ${fadeOpacity > 0.8 ? 'opacity-40' : 'opacity-100'}`}
-            onDoubleClick={(e) => { e.stopPropagation(); onFocus(id, posVec); }}
-            onClick={(e) => { e.stopPropagation(); onSelect(id); }}
-          >
-            <span className={`text-[10px] font-bold tracking-widest ${isLightMode ? 'text-blue-900' : 'text-white'} whitespace-nowrap leading-none mb-1`}>
-              {name.toUpperCase()}
-            </span>
-            <div className="flex gap-1">
-              <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
-              <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
-              <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
+        <Html position={[0, size * 1.2 + 5, 0]} center zIndexRange={[0, 0]}>
+          <div className="flex flex-col items-center gap-2 mt-10">
+            <div
+              className={`${isLightMode ? 'bg-white/60 border-blue-200 shadow-sm' : 'bg-black/80 border-white/40'} border rounded-full px-4 py-1.5 flex flex-col items-center justify-center backdrop-blur-md cursor-pointer pointer-events-auto transition-opacity duration-500 ${fadeOpacity > 0.8 ? 'opacity-40' : 'opacity-100'}`}
+              onDoubleClick={(e) => { e.stopPropagation(); onFocus(id, posVec); }}
+              onClick={(e) => { e.stopPropagation(); onSelect(id); }}
+            >
+              <span className={`text-[10px] font-bold tracking-widest ${isLightMode ? 'text-blue-900' : 'text-white'} whitespace-nowrap leading-none mb-1`}>
+                {name.toUpperCase()}
+              </span>
+              <div className="flex gap-1">
+                <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
+                <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
+                <div className={`w-1 h-1 rounded-full ${isLightMode ? 'bg-blue-900/60' : 'bg-white/60'}`} />
+              </div>
             </div>
+
+            {/* ADAPTIVE MOON DROPDOWN (ONLY IF COLLAPSED AND SELECTED) */}
+            {labelsCollapsed && isPlanetSelected && moons.length > 0 && (
+              <div className="flex flex-col mt-20 gap-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className={`h-6 w-px ${isLightMode ? 'bg-blue-900/20' : 'bg-white/20'} mx-auto`} />
+                <div className={`${isLightMode ? 'bg-white/80 border-blue-100 shadow-lg' : 'bg-black/60 border-white/10 shadow-2xl'} backdrop-blur-md rounded-xl border p-2 min-w-[124px]`}>
+                  <div className={`text-[7px] font-bold ${isLightMode ? 'text-blue-900/40' : 'text-white/40'} tracking-widest uppercase mb-1.5 text-center`}>Satellite Orbitals</div>
+                  <div className="flex flex-col gap-0.5">
+                    {moons.map(moon => (
+                      <button
+                        key={moon.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(moon.id);
+                          const mx = Math.cos(moon.angle) * moon.distance;
+                          const mz = Math.sin(moon.angle) * moon.distance;
+                          onFocus(moon.id, new THREE.Vector3(posVec.x + mx, 0, posVec.z + mz));
+                        }}
+                        className={`text-[9px] font-semibold px-2 py-1.5 rounded-md text-left transition-all 
+                          ${selectedId === moon.id
+                            ? (isLightMode ? 'text-amber-600 bg-amber-50/80 shadow-sm' : 'text-amber-400 bg-white/5')
+                            : (isLightMode ? 'text-blue-900/70 hover:bg-blue-50' : 'text-slate-300 hover:bg-white/10')
+                          }`}
+                      >
+                        {moon.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </Html>
       )}
+
 
       {moons.map((moon) => (
         <MoonComponent
@@ -205,6 +261,8 @@ export const Planet = ({
           useAdvancedShader={useAdvancedShader}
           parentPosVec={posVec}
           planetId={id}
+          scaleMode={scaleMode}
+          isParentCollapsed={labelsCollapsed}
         />
       ))}
     </group>
@@ -280,8 +338,9 @@ function useHighResTexture(url: string | null | undefined) {
 }
 
 const MoonComponent = ({
-  moon, selectedId, focusedId, onSelect, onFocus, isLightMode, useAdvancedShader, parentPosVec, planetId
+  moon, selectedId, focusedId, onSelect, onFocus, isLightMode, useAdvancedShader, parentPosVec, planetId, scaleMode, isParentCollapsed
 }: MoonComponentProps) => {
+  const isRealistic = scaleMode === 'realistic';
   const { gl } = useThree();
   const moonGroupRef = useRef<THREE.Group>(null);
   const [moonLodLevel, setMoonLodLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
@@ -295,6 +354,7 @@ const MoonComponent = ({
   const isMoonFocused = selectedId === moon.id || focusedId === moon.id;
 
   const baseTexture = useTexture(moon.textureUrl || '') as THREE.Texture;
+  const hdTexture = useHighResTexture(isRealistic ? moon.hdTextureUrl : null);
 
   useEffect(() => {
     addTerminalLog(`Asset LOD updated: [${moon.name.toUpperCase()}] -> ${moonLodLevel}`, 'info');
@@ -322,10 +382,14 @@ const MoonComponent = ({
       lastDistRef.current = dist;
       setMoonCameraSpeed(speed);
 
-      const distWeight = THREE.MathUtils.clamp((50 - dist) / (50 - 20), 0, 1);
+      // Adaptive thresholds relative to moon size
+      const moonProximityThreshold = moon.size * 10.0;
+      const moonHDThreshold = moon.size * 3.0;
+
+      const distWeight = THREE.MathUtils.clamp((moonProximityThreshold - dist) / (moonProximityThreshold - moonHDThreshold), 0, 1);
       const proximityFidelity = distWeight * 0.4;
 
-      if (isMoonFocused && dist < 25) {
+      if (isMoonFocused && dist < moonHDThreshold) {
         if (speed < 0.6) {
           stabilityTimerRef.current = Math.min(1.0, stabilityTimerRef.current + delta);
         } else {
@@ -338,8 +402,9 @@ const MoonComponent = ({
       const targetFidelity = isMoonFocused ? (proximityFidelity + stabilityFidelity) : 0;
 
       if (targetFidelity > 0.9) setMoonLodLevel('HIGH');
-      else if (dist < 60) setMoonLodLevel('MEDIUM');
+      else if (dist < moon.size * 25.0) setMoonLodLevel('MEDIUM');
       else setMoonLodLevel('LOW');
+
 
       if (moonFadeOpacity < targetFidelity) {
         setMoonFadeOpacity(v => Math.min(targetFidelity, v + delta * 1.5));
@@ -370,16 +435,16 @@ const MoonComponent = ({
             onDoubleClick={(e) => { e.stopPropagation(); onFocus(moon.id, moonPosVec); }}
             renderOrder={0}
           >
-            <sphereGeometry args={[moon.size, getMoonSegments(moonLodLevel), getMoonSegments(moonLodLevel)]} />
+            <sphereGeometry args={[moon.size, isRealistic ? 64 : getMoonSegments(moonLodLevel), isRealistic ? 64 : getMoonSegments(moonLodLevel)]} />
             <BodyMaterial
-              texture={baseTexture}
+              texture={(isRealistic && hdTexture) ? hdTexture : baseTexture}
               color={moon.color}
               transparent={false}
               opacity={1}
             />
           </mesh>
 
-          {(moonLodLevel === 'HIGH' || moonFadeOpacity > 0.05) && (
+          {!isRealistic && (moonLodLevel === 'HIGH' || moonFadeOpacity > 0.05) && (
             <Suspense fallback={null}>
               <HDLayer
                 hdTextureUrl={(isMoonFocused || moonFadeOpacity > 0.1) ? moon.hdTextureUrl : null}
@@ -410,8 +475,9 @@ const MoonComponent = ({
         </mesh>
       )}
 
-      {(selectedId === planetId || isMoonSelected) && (
-        <Html position={[moonX, moon.size + 2, moonZ]} center zIndexRange={[0, 0]}>
+      {(selectedId === planetId || isMoonSelected) && !isParentCollapsed && (
+        <Html position={[moonX, moon.size * 1.5 + 2, moonZ]} center zIndexRange={[0, 0]}>
+
           <div
             className={`text-[8px] font-bold tracking-widest uppercase drop-shadow-md cursor-pointer ${isMoonSelected ? (isLightMode ? 'text-blue-900 bg-white/60 px-2 py-1 rounded-full border border-blue-200 shadow-sm' : 'text-white bg-black/80 px-2 py-1 rounded-full border border-white/40') : (isLightMode ? 'text-blue-900/60' : 'text-slate-400')}`}
             onDoubleClick={(e) => { e.stopPropagation(); onFocus(moon.id, moonPosVec); }}

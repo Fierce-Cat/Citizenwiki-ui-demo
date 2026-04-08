@@ -25,8 +25,25 @@ export const DynamicLighting = ({ focusTarget, isZoomedIn }: { focusTarget: THRE
 
   return (
     <>
-      <pointLight ref={pointLightRef} position={[0, 0, 0]} intensity={3} distance={0} decay={0} color="#ffffff" />
-      <directionalLight ref={lightRef} intensity={0} color="#ffffff" />
+      <pointLight 
+        ref={pointLightRef} 
+        position={[0, 0, 0]} 
+        intensity={3} 
+        distance={0} 
+        decay={0} 
+        color="#ffffff" 
+        castShadow
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.05}
+      />
+      <directionalLight 
+        ref={lightRef} 
+        intensity={0} 
+        color="#ffffff"
+        castShadow
+        shadow-bias={-0.0001}
+      />
+
     </>
   );
 };
